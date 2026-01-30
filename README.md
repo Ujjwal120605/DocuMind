@@ -11,29 +11,23 @@
 
 ## 🚀 Features
 
-✅ **Chat with Your Document**
-- Upload any PDF and start a natural conversation about its contents.
-
-✅ **Smart Summarization**
-- Get concise summaries and section-level insights powered by **Gemini AI**.
-
-✅ **Question Answering**
-- Ask context-aware questions and get accurate, referenced answers.
-
-✅ **Multi-Document Support**
-- Compare or analyze multiple PDFs at once.
-
-✅ **Clean Streamlit Interface**
-- Responsive, modern UI with real-time responses.
-
-✅ **Local or Cloud Deployment**
-- Works seamlessly both locally and on **Streamlit Cloud**.
+- End-to-end React application bootstrapped with Create React App
+- Clean, modular component structure
+- Optimized production build
+- Deployed on Vercel for fast global access
+- Ready for extension with APIs, LLMs, or backend services
 
 ---
-##Live Demo
-well ive deployed it on streamlit website
-this is how it looks (https://rag-m6ummyind-ujjwalbajpaiec23-5233s-projects.vercel.app/)
-## 🧩 Tech Stack
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React, JavaScript, HTML, CSS
+- **Build Tooling:** Create React App
+- **Deployment:** Vercel
+- **Package Manager:** npm
+---
+🔗 **Live Demo:**  
+https://rag-1jhfgi4sa-ujjwalbajpaiec23-5233s-projects.vercel.app/
 
 | Component | Technology Used |
 |------------|----------------|
@@ -44,23 +38,7 @@ this is how it looks (https://rag-m6ummyind-ujjwalbajpaiec23-5233s-projects.verc
 | **Vector Storage (optional)** | ChromaDB or FAISS |
 | **Language** | Python 3.10+ |
 
----
-#Sample Screenshot
-<img width="1440" height="771" alt="Screenshot 2025-10-27 at 7 16 31 PM" src="https://github.com/user-attachments/assets/92a9819c-cfab-462c-88b9-169122072306" />
-<img width="1440" height="777" alt="Screenshot 2025-10-27 at 7 19 07 PM" src="https://github.com/user-attachments/assets/6af81b81-dfae-4662-bc80-62b7e5e4f100" />
-<img width="1440" height="774" alt="Screenshot 2025-10-27 at 7 18 16 PM" src="https://github.com/user-attachments/assets/0f8c8f7c-27e9-4a3b-ad63-a73cd2f0a961" />
-<img width="1440" height="783" alt="Screenshot 2025-10-27 at 7 19 27 PM" src="https://github.com/user-attachments/assets/6fc0ef3f-5533-48f7-8ffe-4b99430c49af" />
-<img width="1440" height="776" alt="Screenshot 2025-10-27 at 7 20 05 PM" src="https://github.com/user-attachments/assets/cbcdacd6-61cb-4954-8421-fe66c921b977" />
-<img width="1440" height="783" alt="Screenshot 2025-10-27 at 7 20 41 PM" src="https://github.com/user-attachments/assets/faf5c5a9-75bf-4450-9ba8-fdc83ac3282b" />
-<img width="1440" height="779" alt="Screenshot 2025-10-27 at 7 17 35 PM" src="https://github.com/user-attachments/assets/8d4d8e9f-bc3e-4f47-8c91-e536b7dcb0e6" />
-<img width="1440" height="900" alt="Screenshot 2025-10-27 at 6 52 43 PM" src="https://github.com/user-attachments/assets/941dac94-bc58-403f-9bd5-19ac5626f868" />
 
-
-
-
-
-
-## 📦 Installation & Setup
 
 ### 1️⃣ Clone the repository
 ```bash
@@ -155,15 +133,3 @@ Ujjwal Bajpai
 📍 RV College of Engineering, Bangalore
 💼 GitHub: @Ujjwal120605
 
-“Turning static PDFs into intelligent, conversational knowledge.”
-
-yaml
-Copy code
-
----
-
-Would you like me to:
-- 🔹 include **a “System Architecture” diagram** (with blocks like “PDF Input → Text Splitter → Gemini Model → Streamlit UI”)?  
-- 🔹 or a **short demo GIF placeholder** section for when you deploy on Streamlit Cloud?
-
-I can add either (or both) to make your README top-tier.
