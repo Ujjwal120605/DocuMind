@@ -5,7 +5,7 @@ const DocumentAnalyzer = () => {
 
 
   // Load API key from environment variable on mount
-  const [apiKey, setApiKey] = useState(() => {
+  const [apiKey] = useState(() => {
     const envKey = process.env.REACT_APP_GEMINI_API_KEY || '';
     if (envKey) {
       console.log('✅ Gemini API key loaded from environment');
