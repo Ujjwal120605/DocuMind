@@ -1,4 +1,9 @@
 {
+  "name": "documind",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build"
+  },
   "dependencies": {
     "firebase": "^12.4.0",
     "gsap": "^3.13.0",
