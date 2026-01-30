@@ -1,25 +1,14 @@
 import React, { useState } from 'react';
+import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import GradientBlinds from './GradientBlinds';
 import Navbar from './Navbar';
 import About from './About';
-import SignInModal from './SignInModal';
 import DocumentAnalyzer from './DocumentAnalyzer'; // Import the DocumentAnalyzer component
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [isHovered, setIsHovered] = useState(false);
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [isSignedIn, setIsSignedIn] = useState(false); // Track sign-in status
 
-  const handleGetStarted = () => {
-    setShowSignInModal(true);
-  };
-
-  const handleSignIn = () => {
-    setShowSignInModal(false);
-    setIsSignedIn(true); // Set signed in status
-    setCurrentPage('analyzer'); // Navigate to analyzer page
-  };
 
   const handleBackToHome = () => {
     setCurrentPage('home');
@@ -40,16 +29,8 @@ function App() {
         <Navbar 
           onNavigate={setCurrentPage} 
           currentPage={currentPage}
-          onTryNow={() => setShowSignInModal(true)}
         />
       )}
-
-      {/* SignInModal */}
-      <SignInModal 
-        isOpen={showSignInModal} 
-        onClose={() => setShowSignInModal(false)} 
-        onSignIn={handleSignIn}
-      />
 
       {/* Home Page */}
       {currentPage === 'home' && (
@@ -101,32 +82,63 @@ function App() {
               Extract insights from your documents with advanced ML algorithms
             </p>
 
-            <button
-              onClick={handleGetStarted}
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-              style={{
-                padding: '15px 45px',
-                fontSize: '1.2rem',
-                fontWeight: '600',
-                color: '#fff',
-                background: isHovered
-                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                  : 'rgba(255, 255, 255, 0.1)',
-                border: '2px solid rgba(255, 255, 255, 0.8)',
-                borderRadius: '50px',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                backdropFilter: 'blur(10px)',
-                transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-                boxShadow: isHovered
-                  ? '0 10px 30px rgba(102, 126, 234, 0.5)'
-                  : '0 4px 15px rgba(0,0,0,0.2)',
-                pointerEvents: 'auto'
-              }}
-            >
-              Get Started
-            </button>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button
+                  onMouseEnter={() => setIsHovered(true)}
+                  onMouseLeave={() => setIsHovered(false)}
+                  style={{
+                    padding: '15px 45px',
+                    fontSize: '1.2rem',
+                    fontWeight: '600',
+                    color: '#fff',
+                    background: isHovered
+                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                      : 'rgba(255, 255, 255, 0.1)',
+                    border: '2px solid rgba(255, 255, 255, 0.8)',
+                    borderRadius: '50px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    backdropFilter: 'blur(10px)',
+                    transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                    boxShadow: isHovered
+                      ? '0 10px 30px rgba(102, 126, 234, 0.5)'
+                      : '0 4px 15px rgba(0,0,0,0.2)',
+                    pointerEvents: 'auto'
+                  }}
+                >
+                  Get Started
+                </button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <button
+                onClick={() => setCurrentPage('analyzer')}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                style={{
+                  padding: '15px 45px',
+                  fontSize: '1.2rem',
+                  fontWeight: '600',
+                  color: '#fff',
+                  background: isHovered
+                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                    : 'rgba(255, 255, 255, 0.1)',
+                  border: '2px solid rgba(255, 255, 255, 0.8)',
+                  borderRadius: '50px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  backdropFilter: 'blur(10px)',
+                  transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                  boxShadow: isHovered
+                    ? '0 10px 30px rgba(102, 126, 234, 0.5)'
+                    : '0 4px 15px rgba(0,0,0,0.2)',
+                  pointerEvents: 'auto'
+                }}
+              >
+                Go to Analyzer
+              </button>
+            </SignedIn>
           </div>
         </div>
       )}
@@ -135,9 +147,25 @@ function App() {
       {currentPage === 'about' && <About onNavigate={setCurrentPage} />}
 
       {/* Document Analyzer Page */}
-      {currentPage === 'analyzer' && isSignedIn && (
-        <DocumentAnalyzer onBack={handleBackToHome} />
-      )}
+      <SignedIn>
+        {currentPage === 'analyzer' && (
+          <DocumentAnalyzer onBack={handleBackToHome} />
+        )}
+      </SignedIn>
+      <SignedOut>
+        {currentPage === 'analyzer' && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            color: 'white',
+            fontSize: '1.5rem'
+          }}>
+            Please sign in to access the analyzer
+          </div>
+        )}
+      </SignedOut>
     </div>
   );
 }

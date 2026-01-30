@@ -2,15 +2,24 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, MessageSquare, BarChart3, Settings, Send, Download, RefreshCw, Trash2, Eye, EyeOff, Check, AlertCircle, Loader2, X, Menu, Moon, Bug } from 'lucide-react';
 
 const DocumentAnalyzer = () => {
-  
 
-  const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
 
-  
+  // Load API key from environment variable on mount
+  const [apiKey, setApiKey] = useState(() => {
+    const envKey = process.env.REACT_APP_GEMINI_API_KEY || '';
+    if (envKey) {
+      console.log('✅ Gemini API key loaded from environment');
+    } else {
+      console.warn('⚠️ REACT_APP_GEMINI_API_KEY not found in .env file');
+    }
+    return envKey;
+  });
 
-  
-  
-  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-exp');
+
+
+
+
+  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
   const [temperature, setTemperature] = useState(0.3);
   const [activeMode, setActiveMode] = useState('chat');
   const [analysisType, setAnalysisType] = useState('summary');
@@ -39,7 +48,7 @@ const DocumentAnalyzer = () => {
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
     script.async = true;
     document.head.appendChild(script);
-    
+
     return () => {
       document.head.removeChild(script);
     };
@@ -61,11 +70,11 @@ const DocumentAnalyzer = () => {
     setTimeout(() => setSuccess(''), 3000);
   };
 
-  
-  
 
-  
-  
+
+
+
+
 
   const extractTextFromTXT = async (file) => {
     return new Promise((resolve, reject) => {
@@ -90,10 +99,10 @@ const DocumentAnalyzer = () => {
       reader.onload = async (e) => {
         try {
           const arrayBuffer = e.target.result;
-          
+
           // Use pdf.js library loaded from CDN
           const pdfjsLib = window['pdfjs-dist/build/pdf'];
-          
+
           if (!pdfjsLib) {
             // Fallback to basic extraction if pdf.js not loaded
             console.warn('⚠️ PDF.js not loaded, using fallback method');
@@ -102,7 +111,7 @@ const DocumentAnalyzer = () => {
             for (let i = 0; i < uint8Array.length; i++) {
               pdfText += String.fromCharCode(uint8Array[i]);
             }
-            
+
             let extractedText = '';
             const textPattern = /\(([^)]{2,})\)/g;
             let match;
@@ -110,17 +119,17 @@ const DocumentAnalyzer = () => {
               let text = match[1];
               if (/[a-zA-Z0-9]/.test(text)) {
                 text = text.replace(/\\n/g, ' ')
-                           .replace(/\\r/g, '')
-                           .replace(/\\t/g, ' ')
-                           .replace(/\\\(/g, '(')
-                           .replace(/\\\)/g, ')')
-                           .replace(/\\\\/g, '\\');
+                  .replace(/\\r/g, '')
+                  .replace(/\\t/g, ' ')
+                  .replace(/\\\(/g, '(')
+                  .replace(/\\\)/g, ')')
+                  .replace(/\\\\/g, '\\');
                 extractedText += text + ' ';
               }
             }
-            
+
             extractedText = extractedText.replace(/\s+/g, ' ').trim();
-            
+
             if (extractedText.length < 50) {
               reject(new Error('Could not extract text from PDF. Try using a TXT file or enable PDF.js library.'));
             } else {
@@ -128,25 +137,25 @@ const DocumentAnalyzer = () => {
             }
             return;
           }
-          
+
           // Use PDF.js for proper extraction
           pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-          
+
           const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
           let fullText = '';
-          
+
           for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
             const page = await pdf.getPage(pageNum);
             const textContent = await page.getTextContent();
             const pageText = textContent.items.map(item => item.str).join(' ');
             fullText += pageText + '\n';
           }
-          
+
           fullText = fullText.replace(/\s+/g, ' ').trim();
-          
+
           console.log('✅ PDF.js extraction - Length:', fullText.length);
           console.log('📄 First 500 chars:', fullText.substring(0, 500));
-          
+
           if (fullText.length < 50) {
             reject(new Error('Could not extract sufficient text from PDF. The PDF may be image-based.'));
           } else {
@@ -165,40 +174,40 @@ const DocumentAnalyzer = () => {
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     const fileName = file.name.toLowerCase();
     const isPDF = fileName.endsWith('.pdf');
     const isTXT = fileName.endsWith('.txt');
-    
+
     if (!isPDF && !isTXT) {
       showError('Please upload a PDF or TXT file only.');
       return;
     }
-    
+
     if (file.size > 10 * 1024 * 1024) {
       showError('File size must be less than 10MB');
       return;
     }
-    
+
     setUploadedFile(file);
     setIsProcessing(true);
     setProcessingProgress(0);
     setExtractedText('');
     setAnalysisResult('');
     setChatMessages([]);
-    
+
     try {
       setProcessingProgress(20);
-      
+
       let result;
       if (isTXT) {
         result = await extractTextFromTXT(file);
       } else if (isPDF) {
         result = await extractTextFromPDF(file);
       }
-      
+
       setProcessingProgress(70);
-      
+
       if (result && result.text && result.text.trim().length > 0) {
         const cleanedText = result.text.trim();
         setExtractedText(cleanedText);
@@ -219,38 +228,102 @@ const DocumentAnalyzer = () => {
 
   const callGeminiAPI = async (prompt) => {
     if (!apiKey) throw new Error('API key is required');
-    
+
     console.log('🚀 Calling Gemini API...');
     console.log('📝 Prompt length:', prompt.length);
     console.log('🔧 Using model:', selectedModel);
-    console.log('🌐 API endpoint: v1beta/models/' + selectedModel);
+
+    const requestBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: temperature,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 8192
+      },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' }
+      ]
+    };
+
+    // Try multiple API endpoints and model name variations
+    const apiVersions = ['v1', 'v1beta'];
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { 
-          temperature: temperature, 
-          topP: 0.95, 
-          topK: 40, 
-          maxOutputTokens: 8192 
-        },
-        safetySettings: [
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' }
-        ]
-      })
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('❌ API Error:', error);
-      throw new Error(error.error?.message || 'API request failed');
+    // Get model variations to try
+    const modelVariations = [selectedModel];
+    if (selectedModel === 'gemini-2.0-flash') {
+      modelVariations.push('gemini-2.5-flash', 'gemini-2.0-flash-exp');
+    } else if (selectedModel === 'gemini-2.0-pro') {
+      modelVariations.push('gemini-2.5-pro', 'gemini-2.0-pro-exp');
     }
     
+    let response = null;
+    let workingModel = selectedModel;
+    
+    // Try each model variation with each API version
+    for (const model of modelVariations) {
+      for (const version of apiVersions) {
+        const apiUrl = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${apiKey}`;
+        console.log(`🌐 Trying: ${version}/models/${model}`);
+        
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+          
+          if (response.ok) {
+            console.log(`✅ Success with model: ${model} using ${version}`);
+            workingModel = model;
+            break;
+          } else if (response.status !== 404) {
+            // If it's not a 404, it might be a different error (auth, etc), so break
+            break;
+          }
+        } catch (err) {
+          console.log(`❌ Error with ${model} (${version}):`, err.message);
+          continue;
+        }
+      }
+      
+      if (response && response.ok) {
+        break;
+      }
+    }
+    
+    // Update selectedModel if we found a working variation
+    if (response && response.ok && workingModel !== selectedModel) {
+      console.log(`🔄 Auto-switched to working model: ${workingModel}`);
+      setSelectedModel(workingModel);
+    }
+
+    if (!response || !response.ok) {
+      let errorMessage = 'Failed to connect to Gemini API. ';
+      
+      if (response) {
+        const errorData = await response.json().catch(() => ({ error: { message: 'Unknown error occurred' } }));
+        console.error('❌ API Error:', errorData);
+        errorMessage = errorData.error?.message || `API request failed with status ${response.status}`;
+        
+        // Provide helpful error messages
+        if (response.status === 401) {
+          throw new Error('Invalid API key. Please check your REACT_APP_GEMINI_API_KEY in .env file');
+        } else if (response.status === 400) {
+          throw new Error(`Bad request: ${errorMessage}. Check your API key and model name.`);
+        } else if (response.status === 404) {
+          errorMessage = `Model "${selectedModel}" not found. Tried variations: ${modelVariations.join(', ')}. Please check if the model name is correct or try a different model.`;
+        }
+      } else {
+        errorMessage += `Tried all model variations (${modelVariations.join(', ')}) and API endpoints. Please check your API key and internet connection.`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
     const data = await response.json();
     const result = data.candidates[0].content.parts[0].text;
     console.log('✅ API response received - Length:', result.length);
@@ -259,17 +332,17 @@ const DocumentAnalyzer = () => {
 
   const runAnalysis = async () => {
     if (!apiKey) {
-      showError('Please enter your API key first!');
+      showError('API key not found! Please set REACT_APP_GEMINI_API_KEY in your .env file and restart the server.');
       return;
     }
     if (!extractedText || extractedText.trim().length < 10) {
       showError('Please upload and process a document first!');
       return;
     }
-    
+
     setIsAnalyzing(true);
     setAnalysisResult('');
-    
+
     const prompts = {
       summary: `You are a document analyst. Read the ENTIRE TEXT carefully and provide a comprehensive summary.
 
@@ -322,11 +395,11 @@ Focus on the content, not file format.`,
 
       custom: customPrompt || 'Analyze the actual text content of this document.'
     };
-    
+
     try {
       const promptText = prompts[analysisType];
       const docText = extractedText.substring(0, 40000);
-      
+
       const fullPrompt = `${promptText}
 
 ======== DOCUMENT TEXT CONTENT START ========
@@ -336,10 +409,10 @@ ${docText}
 IMPORTANT: Analyze the TEXT CONTENT above. Focus on what the text actually says, NOT on PDF structure, image data, or file metadata.
 
 Your analysis:`;
-      
+
       console.log('📊 Running analysis:', analysisType);
       console.log('📄 Analyzing', docText.length, 'characters');
-      
+
       const result = await callGeminiAPI(fullPrompt);
       setAnalysisResult(result);
       showSuccess('✅ Analysis complete!');
@@ -353,17 +426,27 @@ Your analysis:`;
   };
 
   const sendChatMessage = async () => {
-    if (!chatInput.trim() || !apiKey || !extractedText) return;
+    if (!chatInput.trim()) return;
     
+    if (!apiKey) {
+      showError('API key not found! Please set REACT_APP_GEMINI_API_KEY in your .env file and restart the server.');
+      return;
+    }
+    
+    if (!extractedText) {
+      showError('Please upload and process a document first!');
+      return;
+    }
+
     const userMessage = { role: 'user', content: chatInput };
     setChatMessages(prev => [...prev, userMessage]);
     const currentQuestion = chatInput;
     setChatInput('');
     setIsChatting(true);
-    
+
     try {
       const docText = extractedText.substring(0, 40000);
-      
+
       const context = `You are a helpful document Q&A assistant. Answer questions based ONLY on the ACTUAL TEXT CONTENT of the document.
 
 CRITICAL RULES:
@@ -381,7 +464,7 @@ USER QUESTION: ${currentQuestion}
 Answer based on the text content above:`;
 
       console.log('💬 Processing chat question:', currentQuestion);
-      
+
       const response = await callGeminiAPI(context);
       setChatMessages(prev => [...prev, { role: 'assistant', content: response }]);
     } catch (err) {
@@ -395,43 +478,43 @@ Answer based on the text content above:`;
 
   const runAdvancedAnalytics = async () => {
     if (!apiKey || !extractedText) {
-      showError('API key and document required!');
+      showError('API key not found! Please set REACT_APP_GEMINI_API_KEY in your .env file and restart the server.');
       return;
     }
-    
+
     setIsAnalyzing(true);
     setAnalysisResult('');
-    
+
     const analyses = [
-      { 
-        name: 'Executive Summary', 
-        prompt: `Provide a comprehensive 3-4 paragraph summary of the ACTUAL TEXT CONTENT. Focus on what the text says, not file metadata.` 
+      {
+        name: 'Executive Summary',
+        prompt: `Provide a comprehensive 3-4 paragraph summary of the ACTUAL TEXT CONTENT. Focus on what the text says, not file metadata.`
       },
-      { 
-        name: 'Key Insights', 
-        prompt: `Extract 7-10 key insights from the TEXT CONTENT with specific details and examples from what is written.` 
+      {
+        name: 'Key Insights',
+        prompt: `Extract 7-10 key insights from the TEXT CONTENT with specific details and examples from what is written.`
       },
-      { 
-        name: 'Named Entities', 
-        prompt: `Extract all named entities (people, organizations, locations, dates) from the ACTUAL TEXT. Ignore PDF metadata.` 
+      {
+        name: 'Named Entities',
+        prompt: `Extract all named entities (people, organizations, locations, dates) from the ACTUAL TEXT. Ignore PDF metadata.`
       },
-      { 
-        name: 'Main Themes', 
-        prompt: `Identify the main themes and topics discussed in the TEXT CONTENT.` 
+      {
+        name: 'Main Themes',
+        prompt: `Identify the main themes and topics discussed in the TEXT CONTENT.`
       },
-      { 
-        name: 'Key Takeaways', 
-        prompt: `List the most important takeaways and conclusions from the TEXT CONTENT.` 
+      {
+        name: 'Key Takeaways',
+        prompt: `List the most important takeaways and conclusions from the TEXT CONTENT.`
       }
     ];
-    
+
     try {
       let results = `# 📊 Advanced Analytics Report\n\n**Document:** ${uploadedFile?.name}\n**Generated:** ${new Date().toLocaleString()}\n**Model:** ${selectedModel}\n**Text Size:** ${extractedText.length} characters\n\n---\n\n`;
-      
+
       for (let i = 0; i < analyses.length; i++) {
         const analysis = analyses[i];
         setAnalysisResult(results + `\n⏳ Processing: ${analysis.name}...`);
-        
+
         const docText = extractedText.substring(0, 35000);
         const prompt = `${analysis.prompt}
 
@@ -448,7 +531,7 @@ Your analysis:`;
         results += `## ${i + 1}. ${analysis.name}\n\n${result}\n\n---\n\n`;
         setAnalysisResult(results);
       }
-      
+
       showSuccess('✅ Advanced analytics complete!');
     } catch (err) {
       console.error('❌ Advanced analytics error:', err);
@@ -496,12 +579,12 @@ Your analysis:`;
       {showDebugInfo && extractedText && (
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '1rem 1.5rem' }}>
           <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '0.75rem', padding: '1rem', color: '#86efac', fontSize: '0.875rem', fontFamily: 'monospace' }}>
-            <strong>🐛 Debug Info:</strong><br/>
-            Model: {selectedModel}<br/>
-            API Endpoint: v1/models/{selectedModel}:generateContent<br/>
-            Extracted Text Length: {extractedText.length} chars<br/>
-            Words: {extractedText.split(/\s+/).filter(w => w.length > 0).length}<br/>
-            First 300 chars: {extractedText.substring(0, 300)}...<br/>
+            <strong>🐛 Debug Info:</strong><br />
+            Model: {selectedModel}<br />
+            API Endpoint: v1/models/{selectedModel}:generateContent<br />
+            Extracted Text Length: {extractedText.length} chars<br />
+            Words: {extractedText.split(/\s+/).filter(w => w.length > 0).length}<br />
+            First 300 chars: {extractedText.substring(0, 300)}...<br />
             Last 200 chars: ...{extractedText.substring(extractedText.length - 200)}
           </div>
         </div>
@@ -516,7 +599,7 @@ Your analysis:`;
           </div>
         </div>
       )}
-      
+
       {success && (
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '1rem 1.5rem 0 1.5rem' }}>
           <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', backdropFilter: 'blur(10px)' }}>
@@ -530,10 +613,11 @@ Your analysis:`;
         {showSidebar && (
           <div style={{ background: 'rgba(26, 22, 37, 0.7)', borderRadius: '1rem', boxShadow: '0 8px 32px rgba(0,0,0,0.3)', padding: '1.5rem', height: 'fit-content', position: 'sticky', top: '1.5rem', border: '1px solid rgba(167, 139, 250, 0.1)', backdropFilter: 'blur(10px)' }}>
             <div style={{ marginBottom: '1.5rem' }}>
-  <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e5e7eb' }}>
-    <Settings size={20} color="#a78bfa" />Configuration
-  </h3>
-</div>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e5e7eb' }}>
+                <Settings size={20} color="#a78bfa" />Configuration
+              </h3>
+            </div>
+
 
 
             <div style={{ marginBottom: '1.5rem' }}>
@@ -553,10 +637,14 @@ Your analysis:`;
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ fontSize: '0.875rem', fontWeight: '500', color: '#d1d5db', display: 'block', marginBottom: '0.5rem' }}>Model</label>
               <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #3d3650', borderRadius: '0.5rem', fontSize: '0.875rem', background: '#1a1625', color: '#e5e7eb' }}>
-                <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Experimental)</option>
-                <option value="gemini-exp-1206">Gemini Exp 1206</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
+                <option value="gemini-2.0-pro">Gemini 2.0 Pro</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
               </select>
-              <p style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '0.5rem' }}>⚠️ Gemini 1.5 models retired - using 2.0</p>
+              <p style={{ fontSize: '0.7rem', color: '#86efac', marginTop: '0.5rem' }}>
+                {apiKey ? '✅ API key loaded from .env' : '⚠️ Set REACT_APP_GEMINI_API_KEY in .env file'}
+              </p>
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
@@ -675,23 +763,23 @@ Your analysis:`;
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <input 
-                      type="text" 
-                      value={chatInput} 
-                      onChange={(e) => setChatInput(e.target.value)} 
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
                           sendChatMessage();
                         }
                       }}
-                      placeholder="Ask a question about your document..." 
-                      disabled={isChatting} 
-                      style={{ flex: 1, padding: '0.75rem 1rem', border: '1px solid rgba(167, 139, 250, 0.3)', borderRadius: '0.75rem', outline: 'none', background: 'rgba(15, 12, 41, 0.8)', color: '#e5e7eb', fontSize: '0.875rem' }} 
+                      placeholder="Ask a question about your document..."
+                      disabled={isChatting}
+                      style={{ flex: 1, padding: '0.75rem 1rem', border: '1px solid rgba(167, 139, 250, 0.3)', borderRadius: '0.75rem', outline: 'none', background: 'rgba(15, 12, 41, 0.8)', color: '#e5e7eb', fontSize: '0.875rem' }}
                     />
-                    <button 
-                      onClick={sendChatMessage} 
-                      disabled={isChatting || !chatInput.trim()} 
+                    <button
+                      onClick={sendChatMessage}
+                      disabled={isChatting || !chatInput.trim()}
                       style={{ padding: '0.75rem 1.5rem', background: (isChatting || !chatInput.trim()) ? 'rgba(107, 114, 128, 0.5)' : 'linear-gradient(135deg, #a78bfa, #8b5cf6)', color: 'white', border: 'none', borderRadius: '0.75rem', cursor: (isChatting || !chatInput.trim()) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500', transition: 'all 0.3s' }}
                     >
                       {isChatting ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={20} />}
@@ -737,7 +825,7 @@ Your analysis:`;
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem 1.5rem', textAlign: 'center' }}>
           <p style={{ fontWeight: '600', marginBottom: '0.5rem', color: '#e5e7eb', fontSize: '1rem' }}>🚀 Advanced Gemini Document Analyzer</p>
           <p style={{ fontSize: '0.875rem', margin: '0.5rem 0', color: '#9ca3af' }}>Built with React & Google Gemini AI | <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', textDecoration: 'none', fontWeight: '500' }}>Get API Key</a></p>
-          <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.75rem', lineHeight: '1.5' }}>✅ Fixed: Now using Gemini API v1 with correct model names<br/>💡 Chat mode is default for instant Q&A with your documents</p>
+          <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.75rem', lineHeight: '1.5' }}>✅ Fixed: Now using Gemini API v1 with correct model names<br />💡 Chat mode is default for instant Q&A with your documents</p>
         </div>
       </div>
 

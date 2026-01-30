@@ -1,6 +1,7 @@
 import React from 'react';
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 
-function Navbar({ onNavigate, currentPage, onTryNow }) { // Add onTryNow prop
+function Navbar({ onNavigate, currentPage }) {
   const navLinks = [
     { name: 'Home', page: 'home' },
     { name: 'About', page: 'about' },
@@ -28,7 +29,7 @@ function Navbar({ onNavigate, currentPage, onTryNow }) { // Add onTryNow prop
         justifyContent: 'space-between',
         gap: '2rem'
       }}>
-        <div 
+        <div
           onClick={() => onNavigate('home')}
           style={{
             fontSize: '1.5rem',
@@ -75,32 +76,40 @@ function Navbar({ onNavigate, currentPage, onTryNow }) { // Add onTryNow prop
           ))}
         </div>
 
-        <button
-          onClick={onTryNow} // Use the callback prop
-          style={{
-            padding: '0.7rem 1.8rem',
-            fontSize: '1rem',
-            fontWeight: '600',
-            color: '#fff',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
-            borderRadius: '50px',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-            whiteSpace: 'nowrap'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'scale(1.05)';
-            e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'scale(1)';
-            e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
-          }}
-        >
-          Try Now
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button
+                style={{
+                  padding: '0.7rem 1.8rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#fff',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: '50px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+                }}
+              >
+                Sign In
+              </button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+        </div>
       </div>
     </nav>
   );
